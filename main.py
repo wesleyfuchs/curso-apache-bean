@@ -75,7 +75,7 @@ def arredonda(elemento):
 
 # dengue = (
 #     pipeline 
-#     | "Leitura do dataset de dengue" >> ReadFromText('casos_dengue.txt', skip_header_lines=1)
+#     | "Leitura do dataset de dengue" >> ReadFromText('data/casos_dengue.txt', skip_header_lines=1)
 #     | "De texto para lista" >> beam.Map(texto_para_lista)
 #     | "De lista para dicionario" >> beam.Map(lista_para_dicionario, colunas_dengue)
 #     | "Criar campo ano-mes" >> beam.Map(trata_datas)
@@ -83,12 +83,12 @@ def arredonda(elemento):
 #     | "Agrupar pelo estado" >> beam.GroupByKey()
 #     | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue)
 #     | "Soma dos casos pela chave" >> beam.CombinePerKey(sum)
-#     # | "Mostrar resultados" >> beam.Map(print)
+#     | "Mostrar resultados" >> beam.Map(print)
 # )
 
 chuvas = (
     pipeline
-    | "Leitura do dataset de chuvas" >> ReadFromText('chuvas.csv', skip_header_lines=1)
+    | "Leitura do dataset de chuvas" >> ReadFromText('data/chuvas.csv', skip_header_lines=1)
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista, delimitador=',')
     | "Criando chave uf-ano-mes" >> beam.Map(chave_uf_ano_mes_de_lista)
     | "Soma dos casos pela chave (chuvas)" >> beam.CombinePerKey(sum)
