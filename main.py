@@ -70,30 +70,56 @@ def arredonda(elemento):
     Recebe uma tupla 
     Retorna uma tupla com valor arredondado
     """
-    chave = elemento
-    return chave, round(mm, 1)
+    chave, mm = elemento
+    return (chave, round(mm, 1))
 
-# dengue = (
-#     pipeline 
-#     | "Leitura do dataset de dengue" >> ReadFromText('data/casos_dengue.txt', skip_header_lines=1)
-#     | "De texto para lista" >> beam.Map(texto_para_lista)
-#     | "De lista para dicionario" >> beam.Map(lista_para_dicionario, colunas_dengue)
-#     | "Criar campo ano-mes" >> beam.Map(trata_datas)
-#     | "Criar chave pelo estado" >> beam.Map(chave_uf)
-#     | "Agrupar pelo estado" >> beam.GroupByKey()
-#     | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue)
-#     | "Soma dos casos pela chave" >> beam.CombinePerKey(sum)
-#     | "Mostrar resultados" >> beam.Map(print)
-# )
+def filtra_campos_vazios(elemento):
+    """
+    Remove elementos que tenham chaves vazias
+    Recebe uma tupla ('CE-2015-04', {'chuvas': [55.0], 'dengue': [680.0]}) 
+    Retorna uma tupla ('CE-2015-04', {'chuvas': [55.0], 'dengue': [680.0]}) 
+    """
+    chave, dados = elemento
+    if all([
+        dados['chuvas'],
+        dados['dengue']
+    ]):
+        return True
+    else:
+        return False
+    
+    
+dengue = (
+    pipeline 
+    | "Leitura do dataset de dengue" >> ReadFromText('data/sample_casos_dengue.txt', skip_header_lines=1)
+    | "De texto para lista" >> beam.Map(texto_para_lista)
+    | "De lista para dicionario" >> beam.Map(lista_para_dicionario, colunas_dengue)
+    | "Criar campo ano-mes" >> beam.Map(trata_datas)
+    | "Criar chave pelo estado" >> beam.Map(chave_uf)
+    | "Agrupar pelo estado" >> beam.GroupByKey()
+    | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue)
+    | "Soma dos casos pela chave" >> beam.CombinePerKey(sum)
+    # | "Mostrar resultados" >> beam.Map(print)
+)
 
 chuvas = (
     pipeline
-    | "Leitura do dataset de chuvas" >> ReadFromText('data/chuvas.csv', skip_header_lines=1)
+    | "Leitura do dataset de chuvas" >> ReadFromText('data/sample_chuvas.csv', skip_header_lines=1)
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista, delimitador=',')
     | "Criando chave uf-ano-mes" >> beam.Map(chave_uf_ano_mes_de_lista)
     | "Soma dos casos pela chave (chuvas)" >> beam.CombinePerKey(sum)
-    | "Arredondar resultados" >> beam.Map
-    | "Mostrar resultados" >> beam.Map(print)
+    | "Arredondar resultados" >> beam.Map(arredonda)
+    # | "Mostrar resultados de chuvas" >> beam.Map(print)
+)
+
+resultado = (
+    # (chuvas, dengue)
+    # | "Empilha as pcollections" >> beam.Flatten()
+    # | "Agrupa as pcolls" >> beam.GroupByKey()
+    ({'chuvas' : chuvas,'dengue' : dengue})
+    | 'Mesclar pcols' >> beam.CoGroupByKey()
+    | "Filtrar dados vazios" >> beam.Filter(filtra_campos_vazios)
+    | "Mostrar resultado da união das pcollections" >> beam.Map(print)
 )
 
 pipeline.run()
